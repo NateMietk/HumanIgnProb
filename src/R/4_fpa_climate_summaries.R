@@ -30,7 +30,7 @@ if (!exists("fpa_ll")) {
   }
 }
 
-stat <- c('numdays95th', '95th')
+stat <- c('95th')
 vars <- c('aet', 'def', 'ffwi', 'fm100', 'pdsi', 'pr', 'tmmx', 'vpd', 'vs')
 
 unique_states <- unique(fpa_ll$STATE)
