@@ -99,8 +99,25 @@ decompress_file <- function(file, exdir, .file_cache = FALSE) {
 }
 
 # functions for 4_fpa_climate_summaries.R -------------------------------
+# define an efficient extraction function to get mean values by polygon
+fast_extract <- function(rasterfile, index_list) {
+  r <- raster::brick(rasterfile)
 
-extract_one <- function(filename, shapefile_extractor) {
+  polygon_means <- lapply(index_list, FUN = function(x) {
+    extracts <- raster::extract(r, x)
+    colMeans(extracts, na.rm = TRUE)})
+
+  list_of_dfs <- lapply(polygon_means, FUN = function(x) {
+    df <- as.data.frame(x)
+    tibble::rownames_to_column(df)})
+
+  merged_dfs <- dplyr::bind_rows(list_of_dfs, .id = 'NA_L3NAME')
+  wide_df <- tidyr::spread(merged_dfs, rowname, x)
+  return(tibble::as_tibble(wide_df))
+}
+
+
+extract_one <- function(filename, shapefile_extractor, buff = FALSE) {
 
   # function to extract all climate time series based on shapefile input
   # this results in large list of all months/years within the raster climate data
@@ -111,8 +128,13 @@ extract_one <- function(filename, shapefile_extractor) {
 
   out_name <- gsub('.tif', '.csv', filename)
   if (!file.exists(out_name)) {
+    if (buff == FALSE) {
     res <- raster::extract(raster::stack(filename), shapefile_extractor,
                            na.rm = TRUE, fun = 'mean', df = TRUE)
+    } else if (buff == TRUE) {
+      res <- raster::extract(raster::raster(filename), shapefile_extractor,
+                             na.rm = TRUE, fun = 'mean', df = TRUE, buffer = 1000)
+      }
     write.csv(res, file = out_name)
 
   } else {
@@ -401,8 +423,7 @@ shp_rst <- function(y, x, lvl, j){
   require(sf)
   require(tidyverse)
 
-  outrst <- rasterize(as(y[parts[[x]],], "Spatial"), j, lvl) %>%
-    projectRaster(j)
+  outrst <- rasterize(as(y[parts[[x]],], "Spatial"), j, lvl)
 }
 
 combine_rst <- function(y){
@@ -412,7 +433,7 @@ combine_rst <- function(y){
   do.call(merge, y) %>%
     distance(.)  %>%
     aggregate(fact = 20, fun = mean) %>%
-    projectRaster(elevation) %>%
+    projectRaster(., crs = p4string_ea, res = 4000) %>%
     crop(as(usa_shp, "Spatial")) %>%
     mask(as(usa_shp, "Spatial"))
 }
