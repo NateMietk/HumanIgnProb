@@ -12,7 +12,7 @@ p4string_ed <- "+proj=eqdc +lat_0=0 +lon_0=0 +lat_1=33 +lat_2=45 +x_0=0 +y_0=0 +
 p4string_ea <- "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"   #http://spatialreference.org/ref/sr-org/6903/
 
 # define the amount of cores st_par runs on
-ncore <- parallel::detectCores()
+ncor <- parallel::detectCores()
 
 # create main directories
 prefix <- ("data")
@@ -48,6 +48,8 @@ anthro_proc_dir <- file.path(processed_dir, 'anthro')
 transportation_dir <- file.path(processed_dir, 'transportation')
 transportation_density_dir <- file.path(transportation_dir, 'density')
 transportation_processed_dir <- file.path(transportation_dir, 'processed')
+transportation_dist_dir <- file.path(transportation_dir, 'distance')
+
 per_state <- file.path(transportation_density_dir, "per_state")
 
 # create direcotires to hold climate summary outputs
