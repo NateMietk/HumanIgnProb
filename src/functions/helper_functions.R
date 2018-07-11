@@ -233,29 +233,31 @@ mosaic_rasters <- function(files){
 # functions for c_data_prep_transportation_density.R ---------------------------------------------
 
 get_density <- function(x, grids, lines) {
-
+  
   require(tidyverse)
   require(lubridate)
   require(sf)
-
+  
   sub_grids <- grids %>%
-    dplyr::filter(hexid4k == x)
-
-  single_lines_hexid <- lines %>%
-    dplyr::filter(hexid4k == x) %>%
+    dplyr::filter(fishid4k == x)
+  
+  single_lines_fishid <- lines %>%
     sf::st_intersection(., sub_grids) %>%
-    dplyr::select(hexid4k, STUSPS) %>%
+    dplyr::select(fishid4k) %>%
     dplyr::mutate(length_line = st_length(.),
                   length_line = ifelse(is.na(length_line), 0, length_line))
-
+  
   sub_grids <- sub_grids %>%
-    sf::st_join(., single_lines_hexid, join = st_intersects) %>%
-    dplyr::mutate(hexid4k = hexid4k.x) %>%
-    dplyr::group_by(hexid4k) %>%
+    sf::st_join(., single_lines_fishid, join = st_intersects) %>%
+    dplyr::mutate(fishid4k = fishid4k.x) %>%
+    dplyr::group_by(fishid4k) %>%
     dplyr::summarize(length_line = sum(length_line)) %>%
     dplyr::mutate(pixel_area = as.numeric(st_area(geom)),
-                  density = length_line/pixel_area) %>%
-    dplyr::select(hexid4k, length_line, density, pixel_area)
+                  density = length_line/pixel_area,
+                  length_line = ifelse(is.na(length_line), 0, length_line),
+                  density = ifelse(is.na(density), 0, density)) %>%
+    dplyr::select(fishid4k, length_line, density, pixel_area) %>%
+    st_cast('MULTIPOLYGON')
   return(sub_grids)
 }
 

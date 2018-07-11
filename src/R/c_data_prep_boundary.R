@@ -52,25 +52,25 @@ if (!exists("fishnet_4k")) {
 
 # Create voxel
 # 4k hexagonal fishnet
-if (!exists("hexnet_4k")) {
-  if (!file.exists(file.path(fishnet_path, "hexnet_4k.gpkg"))) {
-    hex_points <- spsample(as(usa_shp, 'Spatial'), type = "hexagonal", cellsize = 4000)
-    hex_grid <- HexPoints2SpatialPolygons(hex_points, dx = 4000)
-    hexnet_4k <- st_as_sf(hex_grid) %>%
-      mutate(hexid4k = row_number()) %>%
-      st_intersection(., st_union(usa_shp)) %>%
-      st_join(., usa_shp, join = st_intersects) %>%
-      dplyr::select(hexid4k, STUSPS)
-
-    sf::st_write(hexnet_4k,
-                 file.path(fishnet_path, "hexnet_4k.gpkg"),
-                 driver = "GPKG")
-
-    system(paste0("aws s3 sync ",
-                  fishnet_path, " ",
-                  s3_anc_prefix, "fishnet"))
-  } else {
-    hexnet_4k <- sf::st_read(file.path(fishnet_path, "hexnet_4k.gpkg"))
-
-  }
-}
+# if (!exists("hexnet_4k")) {
+#   if (!file.exists(file.path(fishnet_path, "hexnet_4k.gpkg"))) {
+#     hex_points <- spsample(as(usa_shp, 'Spatial'), type = "hexagonal", cellsize = 4000)
+#     hex_grid <- HexPoints2SpatialPolygons(hex_points, dx = 4000)
+#     hexnet_4k <- st_as_sf(hex_grid) %>%
+#       mutate(hexid4k = row_number()) %>%
+#       st_intersection(., st_union(usa_shp)) %>%
+#       st_join(., usa_shp, join = st_intersects) %>%
+#       dplyr::select(hexid4k, STUSPS)
+# 
+#     sf::st_write(hexnet_4k,
+#                  file.path(fishnet_path, "hexnet_4k.gpkg"),
+#                  driver = "GPKG")
+# 
+#     system(paste0("aws s3 sync ",
+#                   fishnet_path, " ",
+#                   s3_anc_prefix, "fishnet"))
+#   } else {
+#     hexnet_4k <- sf::st_read(file.path(fishnet_path, "hexnet_4k.gpkg"))
+# 
+#   }
+# }
