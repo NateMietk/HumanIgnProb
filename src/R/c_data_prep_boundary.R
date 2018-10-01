@@ -37,11 +37,11 @@ if (!exists("fishnet_4k")) {
     fishnet_4k <- sf::st_make_grid(usa_shp, cellsize = 4000, what = 'polygons') %>%
       sf::st_sf('geometry' = ., data.frame('fishid4k' = 1:length(.))) %>%
       sf::st_intersection(., st_union(usa_shp))
-
+    
     sf::st_write(fishnet_4k,
                  file.path(fishnet_path, "fishnet_4k.gpkg"),
                  driver = "GPKG")
-
+    
     system(paste0("aws s3 sync ",
                   fishnet_path, " ",
                   s3_anc_prefix, "fishnet"))
