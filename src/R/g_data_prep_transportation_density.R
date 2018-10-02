@@ -1,5 +1,5 @@
 
-## Create distnace rasters -----
+## Create distance rasters -----
 if (!exists("ras_mask")) {
   if (!file.exists(file.path(ancillary_dir, "ras_mask/ras_mask.tif"))) {
     if (!exists("fishnet_4k")) {
@@ -104,44 +104,47 @@ transportation_inputs <- list('rail_rds', 'tl', 'primary_rds', 'secondary_rds', 
 
 distance_to_fire_list <- lapply(transportation_inputs, 
                                 FUN = function(x) { 
-                                  
-                                  lines <- get(x) %>%
-                                    mutate(line_ids = row_number())
-                                  
-                                  line_coords <- st_coordinates(lines)
-                                  fire_coords <- st_coordinates(fpa_clean)
-                                  
-                                  line_df <- as_tibble(line_coords) %>%
-                                    mutate(vertex_ids = row_number())
-                                  
-                                  # compute KNN between fires and urban poly vertices
-                                  nearest_neighbors <- as_tibble(bind_cols(nabor::knn(data = line_coords[, c('X', 'Y')],
-                                                                                      fire_coords,
-                                                                                      k = 1))) %>%
-                                    mutate(fpa_id = as.data.frame(fpa_clean)$fpa_id,
-                                           vertex_ids = nn.idx,
-                                           closest_centroid = as.numeric(nn.dists)) %>%
-                                    left_join(., line_df, by = 'vertex_ids') %>%
-                                    mutate(line_ids = L1) %>%
-                                    dplyr::select(fpa_id, vertex_ids, line_ids, closest_centroid) %>%
-                                    left_join(., lines, by = 'line_ids') %>%
-                                    st_as_sf(sf_column_name = "geom") %>%
-                                    arrange(desc(fpa_id)) 
-                                  
-                                  distance_to_fire <- fpa_clean %>%
-                                    arrange(desc(fpa_id)) %>%
-                                    mutate(
-                                      !!paste0('distance_to_', x) := st_distance(
-                                        st_geometry(nearest_neighbors),
-                                        st_geometry(.), by_element = TRUE)) %>%
-                                    dplyr::select(fpa_id, !!paste0('distance_to_', x))
-                                  
-                                  write_rds(distance_to_fire,
-                                            file.path(
-                                              transportation_dist_dir,
-                                              paste0('distance_fpa_', x, '.rds')
-                                            ))
-                                  system(paste0('aws s3 sync ', transportation_dist_dir, ' ', s3_proc_prefix))
+                                  if(!file.exists(file.path( transportation_dist_dir, paste0('distance_fpa_', x, '.rds')))) {
+                                    print(paste0('Starting ', x))
+                                    
+                                    line_coords <- st_coordinates(get(x))
+                                    fire_coords <- st_coordinates(fpa_clean)
+                                    
+                                    line_df <- as_tibble(line_coords) %>%
+                                      mutate(line_ids = L1)
+                                    
+                                    # compute KNN between fires and urban poly vertices
+                                    nearest_neighbors <- as_tibble(bind_cols(nabor::knn(data = line_coords[, c('X', 'Y')],
+                                                                                        fire_coords,
+                                                                                        k = 1))) %>%
+                                      mutate(fpa_id = as.data.frame(fpa_clean)$fpa_id,
+                                             line_ids = nn.idx,
+                                             closest_centroid = as.numeric(nn.dists)) %>%
+                                      left_join(., line_df, by = 'line_ids') %>%
+                                      dplyr::select(fpa_id, vertex_ids, line_ids, closest_centroid) %>%
+                                      left_join(., lines, by = 'line_ids') %>%
+                                      st_as_sf(sf_column_name = "geom") %>%
+                                      arrange(desc(fpa_id)) 
+                                    
+                                    distance_to_fire <- fpa_clean %>%
+                                      arrange(desc(fpa_id)) %>%
+                                      mutate(
+                                        !!paste0('distance_to_', x) := st_distance(
+                                          st_geometry(nearest_neighbors),
+                                          st_geometry(.), by_element = TRUE)) %>%
+                                      dplyr::select(fpa_id, !!paste0('distance_to_', x))
+                                    
+                                    write_rds(distance_to_fire,
+                                              file.path(
+                                                transportation_dist_dir,
+                                                paste0('distance_fpa_', x, '.rds')
+                                              ))
+                                    system(paste0('aws s3 sync ', transportation_dist_dir, ' ', s3_proc_prefix))
+                                  } else {
+                                    print(paste0('Starting ', x))
+                                    
+                                    read_rds(file.path( transportation_dist_dir, paste0('distance_fpa_', x, '.rds')))
+                                  }
                                 } 
 )
 
