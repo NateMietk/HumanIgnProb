@@ -1,145 +1,115 @@
+rasterize_shapefile <- function(shp, out_rst, 
+                                dir_rst = transportation_processed_dir, 
+                                ras_template = raster::raster(file.path(terrain_dir, "elevation.tif"))) {
+  if(!file.exists(file.path(dir_rst, out_rst))) {
+    
+    pspSl <- as.psp(as(shp, 'Spatial'))
+    rastered <- raster::raster(pixellate(pspSl, eps=1000))
+    crs(rastered) <- "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"
+    
+    rastered <- projectRaster(from = rastered, to = ras_template, method = 'bilinear')
+    
+    writeRaster(rastered, filename= file.path(dir_rst, out_rst), format="GTiff")
+    return(rastered)
+  } else {
+    rastered <- raster(file.path(dir_rst, out_rst))
+    return(rastered)
+  }
+}
+get_density <- function(dir_pro = transportation_processed_dir, 
+                        dir_den = transportation_density_dir,
+                        out_pro, out_den) {
+  
+  if(!file.exists(file.path(dir_den, out_den))) {
+    
+    rst_den <- raster::raster(file.path(dir_pro, out_pro))
+    rst_den <- rst_den/1000
+    writeRaster(rst_den, filename= file.path(dir_den, out_den), format="GTiff")
+    return(rst_den)
+  } else {
+    rst_den <- raster::raster(file.path(dir_den, out_den))
+    return(rst_den)
+  }
+}
+get_distance <- function(dir_rst = transportation_processed_dir, 
+                         dir_dis = transportation_dist_dir, 
+                         out_dis, out_rst) {
+  
+  if(!file.exists(file.path(dir_dis, out_dis))) {
+    rst_dist <- raster::raster(file.path(dir_rst, out_rst))
+    reclass_m <- matrix(c(-Inf, 0, NA, 0, Inf, 1), ncol = 3, byrow = TRUE)
+    
+    rst_dist <- raster::reclassify(rst_dist, reclass_m) 
+    rst_dist <- raster::distance(rst_dist)
+    endCluster()
+    
+    writeRaster(rst_dist, filename= file.path(dir_dis, out_dis), format="GTiff")
+    return(rst_dist)
+  } else {
+    rst_dist <- raster::raster(file.path(dir_dis, out_dis))
+    return(rst_dist)
+  }
+}
 
-if (!file.exists(file.path(transportation_density_dir, "railroad_density.gpkg"))) {
+if (!file.exists(file.path(transportation_density_dir, "railroad_distance.tif"))) {
   
-  railroad_fish <- rail_rds %>%
-    dplyr::select(LINEARID) %>%
-    st_join(., fishnet_4k, join = st_intersects) %>%
-    dplyr::select(LINEARID, fishid4k)
-  
-  unique_fishid <- unique(railroad_fish$fishid4k)
-  
-  pboptions(type = 'txt', use_lb = TRUE)
-  cl <- makeCluster(getOption("cl.cores", detectCores()))
-  
-  railroad_density <- pblapply(unique_fishid,
-                               FUN = get_density,
-                               grids = fishnet_4k,
-                               lines = railroad_fish,
-                               cl = cl)
-  stopCluster(cl)
-  
-  railroad_density_all <- do.call(rbind, railroad_density)
-  
-  st_write(railroad_density_all, file.path(transportation_density_dir, "railroad_density.gpkg"),
-           delete_layer = TRUE)
+  rasterize_shapefile(shp = rail_rds, out_rst = 'railroad.tif')
+  railroad_density <- get_density(out_pro = 'railroad.tif', out_den = 'railroad_density.tif')
+  railroad_distance <- get_distance(out_rst = 'railroad.tif', out_dis = 'railroad_distance.tif')
   
   system(paste0("aws s3 sync ",  processed_dir, " ", s3_proc_prefix))
   
 } else {
-  railroad_density <- st_read(file.path(transportation_density_dir, "railroad_density.gpkg"))
+  railroad_density <- raster(file.path(transportation_density_dir, "railroad_density.tif"))
+  railroad_distance <- raster(file.path(transportation_dist_dir, "railroad_distance.tif"))
 }
 
-if (!file.exists(file.path(transportation_density_dir, "transmission_lines_density.gpkg"))) {
+if (!file.exists(file.path(transportation_density_dir, "transmission_lines_distance.tif"))) {
   
-  transmission_lines_fish <- tl %>%
-    dplyr::select(OBJECTID) %>%
-    st_join(., fishnet_4k, join = st_intersects) %>%
-    dplyr::select(OBJECTID, fishid4k)
-  
-  unique_fishid <- unique(transmission_lines_fish$fishid4k)
-  
-  pboptions(type = 'txt', use_lb = TRUE)
-  cl <- makeCluster(getOption('cl.cores', parallel::detectCores()))
-  
-  transmission_lines_density <- pblapply(unique_fishid,
-                                         FUN = get_density,
-                                         grids = fishnet_4k,
-                                         lines = transmission_lines_fish,
-                                         cl = cl)
-  stopCluster(cl)
-  
-  
-  transmission_lines_density_all <- do.call(rbind, transmission_lines_density)
-  
-  st_write(transmission_lines_density_all, file.path(transportation_density_dir, "transmission_lines_density.gpkg"))
+  rasterize_shapefile(shp = tl, out_rst = 'transmission_lines.tif')
+  transmission_lines_density <- get_density(out_pro = 'transmission_lines.tif', out_den = 'transmission_lines_density.tif')
+  transmission_lines_distance <- get_distance(out_rst = 'transmission_lines.tif', out_dis = 'transmission_lines_distance.tif')
   
   system(paste0("aws s3 sync ", processed_dir, " ", s3_proc_prefix))
   
 } else {
-  transmission_lines_density_all <- st_read(file.path(transportation_density_dir, "transmission_lines_density.gpkg"))
+  transmission_lines_density <- raster(file.path(transportation_density_dir, "transmission_lines_density.tif"))
+  transmission_lines_distance <- raster(file.path(transportation_dist_dir, "transmission_lines_distance.tif"))
 }
 
-if (!file.exists(file.path(transportation_density_dir, "primary_rds_density.gpkg"))) {
+if (!file.exists(file.path(transportation_density_dir, "primary_rds_distance.tif"))) {
   
-  primary_fish <- primary_rds %>%
-    dplyr::select(LINEARID) %>%
-    st_join(., fishnet_4k, join = st_intersects) %>%
-    dplyr::select(LINEARID, fishid4k)
-  
-  unique_fishid <- unique(primary_fish$fishid4k)
-  
-  pboptions(type = 'txt', use_lb = TRUE)
-  cl <- makeCluster(getOption('cl.cores', 1))
-  
-  primary_rds_density <- pblapply(unique_fishid,
-                                  FUN = get_density,
-                                  grids = fishnet_4k,
-                                  lines = primary_fish,
-                                  cl = cl)
-  stopCluster(cl)
-  
-  primary_rds_density_all <- do.call(rbind, primary_rds_density)
-  
-  st_write(primary_rds_density_all, file.path(transportation_density_dir, "primary_rds_density.gpkg"))
+  rasterize_shapefile(shp = primary_rds, out_rst = 'primary_rds.tif')
+  primary_rds_density <- get_density(out_pro = 'primary_rds.tif', out_den = 'primary_rds_density.tif')
+  primary_rds_distance <- get_distance(out_rst = 'primary_rds.tif', out_dis = 'primary_rds_distance.tif')
   
   system(paste0("aws s3 sync ", processed_dir, " ", s3_proc_prefix))
   
 } else {
-  primary_rds_density_all <- st_read(file.path(transportation_density_dir, "primary_rds_density.gpkg"))
+  primary_rds_density <- raster(file.path(transportation_density_dir, "primary_rds_density.tif")) 
+  primary_rds_distance <- raster(file.path(transportation_dist_dir, "primary_rds_distance.tif")) 
 }
 
-if (!file.exists(file.path(transportation_density_dir, "secondary_rds_density.gpkg"))) {
+if (!file.exists(file.path(transportation_density_dir, "secondary_rds_distance.tif"))) {
   
-  secondary_fish <- secondary_rds %>%
-    dplyr::select(LINEARID) %>%
-    st_join(., fishnet_4k, join = st_intersects) %>%
-    dplyr::select(LINEARID, fishid4k)
-  
-  
-  unique_fishid <- unique(secondary_fish$fishid4k)
-  
-  pboptions(type = 'txt', use_lb = TRUE)
-  cl <- makeCluster(getOption('cl.cores', parallel::detectCores()))
-  
-  secondary_rds_density <- pblapply(unique_fishid,
-                                    FUN = get_density,
-                                    grids = fishnet_4k,
-                                    lines = secondary_fish,
-                                    cl = cl)
-  stopCluster(cl)
-  
-  secondary_rds_density_all <- do.call(rbind, secondary_rds_density)
-  
-  st_write(secondary_rds_density_all, file.path(transportation_density_dir, "secondary_rds_density.gpkg"))
+  rasterize_shapefile(shp = secondary_rds, out_rst = 'secondary_rds.tif')
+  secondary_rds_density <- get_density(out_pro = 'secondary_rds.tif', out_den = 'secondary_rds_density.tif')
+  secondary_rds_distance <- get_distance(out_rst = 'secondary_rds.tif', out_dis = 'secondary_rds_distance.tif')
   
   system(paste0("aws s3 sync ", processed_dir, " ", s3_proc_prefix))
   
 } else {
-  secondary_rds_density_all <- st_read(file.path(transportation_density_dir, "secondary_rds_density.gpkg"))
+  secondary_rds_density <- raster(file.path(transportation_density_dir, "secondary_rds_density.tif"))
+  secondary_rds_distance <- raster(file.path(transportation_dist_dir, "secondary_rds_distance.tif"))
 }
 
-if (!file.exists(file.path(transportation_density_dir, "tertiary_rds_density.gpkg"))) {
+if (!file.exists(file.path(transportation_density_dir, "tertiary_rds_distance.tif"))) {
+
+  rasterize_shapefile(shp = tertiary_rds, out_rst = 'tertiary_rds.tif')
+  tertiary_rds_density <- get_density(out_pro = 'tertiary_rds.tif', out_den = 'tertiary_rds_density.tif')
+  tertiary_rds_distance <- get_distance(out_rst = 'tertiary_rds.tif', out_dis = 'tertiary_rds_distance.tif')
   
-  tertiary_fish <- tertiary_rds %>%
-    dplyr::select(LINEARID) %>%
-    st_join(., fishnet_4k, join = st_intersects) %>%
-    dplyr::select(LINEARID, fishid4k)
-  
-  unique_fishid <- unique(tertiary_fish$fishid4k)
-  
-  pboptions(type = 'txt', use_lb = TRUE)
-  
-  tertiary_rds_density <- pblapply(unique_fishid,
-                                   FUN = get_density,
-                                   grids = fishnet_4k,
-                                   lines = tertiary_fish)
-  
-  tertiary_rds_density_all <-  do.call(rbind, tertiary_rds_density) 
-  
-  st_write(tertiary_rds_density_all, file.path(transportation_density_dir, "tertiary_rds_density.gpkg"))
-  
-  system(paste0("aws s3 sync ", processed_dir, " ", s3_proc_prefix))
 }  else {
-  tertiary_rds_density_all <- st_read(file.path(transportation_density_dir, "tertiary_rds_density.gpkg"))
+  tertiary_rds_density <- raster(file.path(transportation_density_dir, "tertiary_rds_density.tif"))
 }
 
