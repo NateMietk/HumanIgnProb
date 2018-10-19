@@ -41,6 +41,7 @@ iclus_prefix <- file.path(raw_prefix, 'housing_den')
 elev_prefix <- file.path(raw_prefix, 'metdata_elevationdata')
 tl_prefix <- file.path(raw_prefix, 'Electric_Power_Transmission_Lines')
 climate_prefix <- file.path(prefix, "climate")
+bounds_dir <- file.path(prefix, 'bounds')
 
 # create processed directories
 terrain_dir <- file.path(processed_dir, 'terrain')
@@ -62,6 +63,10 @@ anthro_extract <- file.path(summary_dir, "anthro_extractions")
 anthro_state_extract <- file.path(anthro_extract, "state")
 
 anthro_dir <- file.path(prefix, "anthro")
+ztrax_dir <- file.path(anthro_dir, "ztrax")
+raw_ztrax_dir <- file.path(ztrax_dir, "raw_built_up_gpkg")
+stacked_ztrax_rst_dir <- file.path(ztrax_dir, "stacked_ztrax_rst")
+
 fishnet_path <- file.path(ancillary_dir, "fishnet")
 
 # for pushing and pulling to s3 using the system function
@@ -70,15 +75,18 @@ s3_proc_prefix <- 's3://earthlab-modeling-human-ignitions/processed/'
 s3_raw_prefix <- 's3://earthlab-modeling-human-ignitions/raw/'
 s3_proc_extractions <- 's3://earthlab-modeling-human-ignitions/extractions/'
 s3_proc_climate <- 's3://earthlab-modeling-human-ignitions/climate/'
+s3_proc_bounds <- 's3://earthlab-modeling-human-ignitions/bounds/'
 
 # Check if directory exists for all variable aggregate outputs, if not then create
 var_dir <- list(prefix, raw_prefix, us_prefix, ecoregion_prefix, roads_prefix, summary_dir,
                 fpa_prefix, rails_prefix, pd_prefix, iclus_prefix, climate_prefix,
                 nlcd_prefix,nlcd92_prefix ,nlcd01_prefix ,nlcd06_prefix , elev_prefix,
-                tl_prefix, ancillary_dir, anthro_dir, fishnet_path, processed_dir, summaries_dir,
+                tl_prefix, ancillary_dir, bounds_dir, anthro_dir, fishnet_path, processed_dir, summaries_dir,
                 nlcd_pdi_01_prefix, nlcd_pdi_06_prefix, nlcd_pdi_11_prefix, summary_mean, transportation_dist_dir,
                 summary_95th, summary_numdays95th, terrain_dir, transportation_dir, anthro_proc_dir,
                 transportation_density_dir, transportation_processed_dir, anthro_dir, anthro_state_extract,
-                terrain_extract, anthro_extract, per_state,ecoregionl4_prefix)
+                terrain_extract, anthro_extract, per_state,ecoregionl4_prefix, ztrax_dir, raw_ztrax_dir,
+                stacked_ztrax_rst_dir)
 
 lapply(var_dir, function(x) if(!dir.exists(x)) dir.create(x, showWarnings = FALSE))
+
