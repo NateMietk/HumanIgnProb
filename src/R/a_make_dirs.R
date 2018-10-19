@@ -76,6 +76,7 @@ s3_raw_prefix <- 's3://earthlab-modeling-human-ignitions/raw/'
 s3_proc_extractions <- 's3://earthlab-modeling-human-ignitions/extractions/'
 s3_proc_climate <- 's3://earthlab-modeling-human-ignitions/climate/'
 s3_proc_bounds <- 's3://earthlab-modeling-human-ignitions/bounds/'
+s3_proc_anthro <- 's3://earthlab-modeling-human-ignitions/anthro/'
 
 # Check if directory exists for all variable aggregate outputs, if not then create
 var_dir <- list(prefix, raw_prefix, us_prefix, ecoregion_prefix, roads_prefix, summary_dir,

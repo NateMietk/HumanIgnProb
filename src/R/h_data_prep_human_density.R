@@ -29,7 +29,7 @@ for(i in rst_list) {
                         format = "GTiff", overwrite = TRUE)
   }
   stopCluster(cl)
-  
+  system(paste0("aws s3 sync ", anthro_dir, " ", s3_proc_anthro))
  }
 
 
@@ -42,6 +42,7 @@ for(j in 1980:2016) {
   
   raster::writeRaster(out_rst, file.path('data/anthro/ztrax/ztrax_raw_count_1980_2015_1k', paste0('ztrax_count_', j, '.tif')),
                       format = "GTiff", overwrite = TRUE)
+  system(paste0("aws s3 sync ", anthro_dir, " ", s3_proc_anthro))
 }
 
 rst_list <- list.files('data/anthro/ztrax/ztrax_raw_count_1980_2015_1k', full.names = TRUE)
@@ -57,5 +58,5 @@ lapply(seq_along(rsts), function(x) {
               # Alternatively, omit file extension to write default type (usually .grd)
               datatype = 'GTiff')
   })
-
+system(paste0("aws s3 sync ", anthro_dir, " ", s3_proc_anthro))
 
