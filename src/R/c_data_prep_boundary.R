@@ -11,13 +11,15 @@ if (!exists("usa_shp")){
   usa_shp$STUSPS <- droplevels(usa_shp$STUSPS)
 }
 
-# Download and import the Level 4 Ecoregions data
-# Download will only happen once as long as the file exists
-if (!exists("ecoregions_l4")){
-  ecoregions_l4 <- st_read(file.path(ecoregionl4_prefix, 'us_eco_l4_no_st.shp')) %>%
-    sf::st_simplify(., preserveTopology = TRUE, dTolerance = 1000)  %>%
-    sf::st_transform(st_crs(usa_shp))
-}
+# Create raster mask
+if (!exists("raster_mask")) {
+  raster_mask <- raster::raster()
+  crs(raster_mask) <- crs(p4string_ea)
+  extent(raster_mask) <- c(-2032092, 2515908, -2116850, 731150)
+  nrow(raster_mask) <- 2848
+  ncol(raster_mask) <- 4548
+  res(raster_mask) <- 1000
+  }
 
 # Download and import the Level 3 Ecoregions data
 # Download will only happen once as long as the file exists
@@ -67,48 +69,49 @@ if (!exists("ecoregions_l3")){
     west <- sf::st_read(file.path(bounds_dir, 'west.gpkg'))
   }
 }
-    
-# Create raster mask
-# 4k Fishnet
-if (!exists("fishnet_4k")) {
-  if (!file.exists(file.path(fishnet_path, "fishnet_4k.gpkg"))) {
-    fishnet_4k <- sf::st_make_grid(usa_shp, cellsize = 4000, what = 'polygons') %>%
-      sf::st_sf('geometry' = ., data.frame('fishid4k' = 1:length(.))) %>%
-      sf::st_intersection(., st_union(usa_shp))
-    
-    sf::st_write(fishnet_4k,
-                 file.path(fishnet_path, "fishnet_4k.gpkg"),
-                 driver = "GPKG")
-    
-    system(paste0("aws s3 sync ",
-                  fishnet_path, " ",
-                  s3_anc_prefix, "fishnet"))
-  } else {
-    fishnet_4k <- sf::st_read(file.path(fishnet_path, "fishnet_4k.gpkg"))
-  }
-}
 
-# Create voxel
-# 4k hexagonal fishnet
-# if (!exists("hexnet_4k")) {
-#   if (!file.exists(file.path(fishnet_path, "hexnet_4k.gpkg"))) {
-#     hex_points <- spsample(as(usa_shp, 'Spatial'), type = "hexagonal", cellsize = 4000)
-#     hex_grid <- HexPoints2SpatialPolygons(hex_points, dx = 4000)
-#     hexnet_4k <- st_as_sf(hex_grid) %>%
-#       mutate(hexid4k = row_number()) %>%
-#       st_intersection(., st_union(usa_shp)) %>%
-#       st_join(., usa_shp, join = st_intersects) %>%
-#       dplyr::select(hexid4k, STUSPS)
-# 
-#     sf::st_write(hexnet_4k,
-#                  file.path(fishnet_path, "hexnet_4k.gpkg"),
-#                  driver = "GPKG")
-# 
-#     system(paste0("aws s3 sync ",
-#                   fishnet_path, " ",
-#                   s3_anc_prefix, "fishnet"))
-#   } else {
-#     hexnet_4k <- sf::st_read(file.path(fishnet_path, "hexnet_4k.gpkg"))
-# 
-#   }
-# }
+# Rasterize level 1 ecoregions
+if(!file.exists(file.path(bounds_dir, 'gridded_ecoregions_l1.tif'))) {
+  gridded_ecoregions_l1 <- fasterize::fasterize(ecoregions_l3, raster_mask, field = "na_l1code")
+  writeRaster(gridded_ecoregions_l1, file.path(bounds_dir, 'gridded_ecoregions_l1.tif'))
+  system(paste0("aws s3 sync ", bounds_dir, " ", s3_proc_bounds))
+  } else {
+    gridded_ecoregions_l1 <- raster::raster(file.path(bounds_dir, 'gridded_ecoregions_l1.tif'))
+  }
+
+# Rasterize level 2 ecoregions
+if(!file.exists(file.path(bounds_dir, 'gridded_ecoregions_l2.tif'))) {
+  gridded_ecoregions_l2 <- fasterize::fasterize(ecoregions_l3, raster_mask, field = "na_l2code")
+  writeRaster(gridded_ecoregions_l2, file.path(bounds_dir, 'gridded_ecoregions_l2.tif'))
+  system(paste0("aws s3 sync ", bounds_dir, " ", s3_proc_bounds))
+  } else {
+    gridded_ecoregions_l2 <- raster::raster(file.path(bounds_dir, 'gridded_ecoregions_l2.tif'))
+  }
+
+# Rasterize level 3 ecoregions
+if(!file.exists(file.path(bounds_dir, 'gridded_ecoregions_l3.tif'))) {
+  gridded_ecoregions_l3 <- fasterize::fasterize(ecoregions_l3, raster_mask, field = "us_l3code")
+  writeRaster(gridded_ecoregions_l3, file.path(bounds_dir, 'gridded_ecoregions_l3.tif'))
+  system(paste0("aws s3 sync ", bounds_dir, " ", s3_proc_bounds))
+  } else {
+    gridded_ecoregions_l3 <- raster::raster(file.path(bounds_dir, 'gridded_ecoregions_l3.tif'))
+  }
+
+# Rasterize states
+if(!file.exists(file.path(bounds_dir, 'gridded_states.tif'))) {
+  gridded_states <- fasterize::fasterize(usa_shp, raster_mask, field = "STUSPS")
+  writeRaster(gridded_states, file.path(bounds_dir, 'gridded_states.tif'))
+  system(paste0("aws s3 sync ", bounds_dir, " ", s3_proc_bounds))
+  } else {
+    gridded_states <- raster::raster(file.path(bounds_dir, 'gridded_states.tif'))
+  }
+
+# Create longitude and latitude rasters
+if(!file.exists(file.path(bounds_dir, 'gridded_lonitude.tif'))) {
+  gridded_lonitude <- init(gridded_states, 'x')
+  gridded_latitude <- init(gridded_states, 'y')
+  
+  writeRaster(gridded_lonitude, file.path(bounds_dir, 'gridded_lonitude.tif'))
+  writeRaster(gridded_latitude, file.path(bounds_dir, 'gridded_latitude.tif'))
+  system(paste0("aws s3 sync ", bounds_dir, " ", s3_proc_bounds))
+}
