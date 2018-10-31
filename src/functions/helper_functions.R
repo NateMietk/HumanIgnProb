@@ -408,7 +408,11 @@ impute_in_parallel_ciesin <- function(data, ids) {
 
   fpa_out
 }
-
+mode <- function(x) {
+  ux <- unique(x)
+  ux=ux[!is.na(ux)]
+  ux[which.max(tabulate(match(x, ux)))]
+}
 # Functions for `d_rasterize_anthro.R` ------------------------------------
 
 shp_rst <- function(y, x, lvl, j){
