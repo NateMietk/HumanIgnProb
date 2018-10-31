@@ -11,14 +11,14 @@ elev_files <- list.files(file.path(raw_prefix, 'gtopo30'),
                          full.names = TRUE)
 
 if (!exists("elevation")) {
-  if (!file.exists(file.path(processed_dir, 'elevation.tif'))) {
+  if (!file.exists(file.path(processed_dir,'terrain', 'elevation.tif'))) {
 
     elevation <- mosaic_rasters(elev_files) %>%
-      raster::projectRaster(., res = 1000, crs = p4string_ea, method = 'bilinear') %>%
+      raster::projectRaster(., raster_mask, res = 1000, crs = p4string_ea, method = 'bilinear') %>%
       raster::crop(as(usa_shp, 'Spatial')) %>%
       raster::mask(as(usa_shp, 'Spatial'))
 
-    raster::writeRaster(elevation, filename = file.path(processed_dir, "elevation.tif"), format = "GTiff")
+    raster::writeRaster(elevation, filename = file.path(processed_dir,'terrain', "elevation.tif"), format = "GTiff")
 
     system(paste0("aws s3 sync ",
                   processed_dir, " ",
@@ -26,18 +26,18 @@ if (!exists("elevation")) {
 
   } else {
 
-    elevation <- raster::raster(file.path(processed_dir, "elevation.tif"))
+    elevation <- raster::raster(file.path(processed_dir, 'terrain', "elevation.tif"))
   }
 }
 
 # Create slope raster
 if (!exists("slope")) {
-  if (!file.exists(file.path(processed_dir, 'slope.tif'))) {
+  if (!file.exists(file.path(processed_dir, 'terrain','slope.tif'))) {
 
     slope <- raster::raster(file.path(processed_dir, "elevation.tif")) %>%
       raster::terrain(., opt = 'slope', unit = 'degrees')
 
-    raster::writeRaster(slope, filename = file.path(processed_dir, "slope.tif"), format = "GTiff")
+    raster::writeRaster(slope, filename = file.path(processed_dir, 'terrain',"slope.tif"), format = "GTiff")
 
     system(paste0("aws s3 sync ",
                   processed_dir, " ",
@@ -45,18 +45,18 @@ if (!exists("slope")) {
 
   } else {
 
-    slope <- raster::raster(file.path(processed_dir, "slope.tif"))
+    slope <- raster::raster(file.path(processed_dir, 'terrain',"slope.tif"))
   }
 }
 
 # Create terrain ruggedness
 if (!exists("ruggedness")) {
-  if (!file.exists(file.path(processed_dir, 'ruggedness.tif'))) {
+  if (!file.exists(file.path(processed_dir, 'terrain','ruggedness.tif'))) {
 
-    ruggedness <- raster::raster(file.path(processed_dir, "elevation.tif")) %>%
+    ruggedness <- raster::raster(file.path(processed_dir, 'terrain',"elevation.tif")) %>%
       raster::terrain(., opt = 'TRI')
 
-    raster::writeRaster(ruggedness, filename = file.path(processed_dir, "ruggedness.tif"), format = "GTiff")
+    raster::writeRaster(ruggedness, filename = file.path(processed_dir, 'terrain',"ruggedness.tif"), format = "GTiff")
 
     system(paste0("aws s3 sync ",
                   processed_dir, " ",
@@ -64,18 +64,18 @@ if (!exists("ruggedness")) {
 
   } else {
 
-    ruggedness <- raster::raster(file.path(processed_dir, "ruggedness.tif"))
+    ruggedness <- raster::raster(file.path(processed_dir,'terrain', "ruggedness.tif"))
   }
 }
 
 # Create terrain roughness
 if (!exists("roughness")) {
-  if (!file.exists(file.path(processed_dir, 'roughness.tif'))) {
+  if (!file.exists(file.path(processed_dir, 'terrain','roughness.tif'))) {
 
-    roughness <- raster::raster(file.path(processed_dir, "elevation.tif")) %>%
+    roughness <- raster::raster(file.path(processed_dir, 'terrain',"elevation.tif")) %>%
       raster::terrain(., opt = 'roughness')
 
-    raster::writeRaster(roughness, filename = file.path(processed_dir, "roughness.tif"), format = "GTiff")
+    raster::writeRaster(roughness, filename = file.path(processed_dir, 'terrain',"roughness.tif"), format = "GTiff")
 
     system(paste0("aws s3 sync ",
                   processed_dir, " ",
@@ -83,18 +83,18 @@ if (!exists("roughness")) {
 
   } else {
 
-    roughness <- raster::raster(file.path(processed_dir, "roughness.tif"))
+    roughness <- raster::raster(file.path(processed_dir,'terrain', "roughness.tif"))
   }
 }
 
 # Create aspect
 if (!exists("aspect")) {
-  if (!file.exists(file.path(processed_dir, 'aspect.tif'))) {
+  if (!file.exists(file.path(processed_dir,'terrain', 'aspect.tif'))) {
 
-    aspect <- raster::raster(file.path(processed_dir, "elevation.tif")) %>%
+    aspect <- raster::raster(file.path(processed_dir,'terrain', "elevation.tif")) %>%
       raster::terrain(., opt = 'aspect', unit = 'degrees')
 
-    raster::writeRaster(aspect, filename = file.path(processed_dir, "aspect.tif"), format = "GTiff")
+    raster::writeRaster(aspect, filename = file.path(processed_dir, 'terrain',"aspect.tif"), format = "GTiff")
 
     system(paste0("aws s3 sync ",
                   processed_dir, " ",
@@ -102,7 +102,7 @@ if (!exists("aspect")) {
 
   } else {
 
-    aspect <- raster::raster(file.path(processed_dir, "aspect.tif"))
+    aspect <- raster::raster(file.path(processed_dir, 'terrain',"aspect.tif"))
   }
 }
 
