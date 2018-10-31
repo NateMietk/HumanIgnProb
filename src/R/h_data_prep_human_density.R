@@ -20,7 +20,7 @@ for(i in rst_list) {
     filter_shp <- shp %>%
       filter(YearBuilt == j)
 
-    ras_template <- raster::raster("data/processed/terrain/elevation.tif")
+    ras_template <- raster_mask
     
     rst_tmp <- raster::rasterize(filter_shp, ras_template, fun = 'count', field = 'built_class')
     
@@ -52,11 +52,7 @@ rsts <- Reduce("+", rsts, accumulate = TRUE)
 lapply(seq_along(rsts), function(x) {
   name <- gsub("count", "cumsum", rst_list[x])
 
-  writeRaster(rsts[[x]], name,
-              # Apparently, using .tif files threw an error
-              #     paste(All.AT[x], "_cumsum.tif", sep = ""),
-              # Alternatively, omit file extension to write default type (usually .grd)
-              datatype = 'GTiff')
+  writeRaster(rsts[[x]], name, datatype = 'GTiff')
   })
 system(paste0("aws s3 sync ", anthro_dir, " ", s3_proc_anthro))
 

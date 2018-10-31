@@ -1,6 +1,6 @@
 rasterize_shapefile <- function(shp, out_rst, 
                                 dir_rst = transportation_processed_dir, 
-                                ras_template = raster::raster(file.path(terrain_dir, "elevation.tif"))) {
+                                ras_template = raster_mask) {
   if(!file.exists(file.path(dir_rst, out_rst))) {
   
     pspSl <- as.psp(as(shp, 'Spatial'))
@@ -105,13 +105,12 @@ if (!file.exists(file.path(transportation_density_dir, "secondary_rds_distance.t
 
 if (!file.exists(file.path(transportation_density_dir, "tertiary_rds_distance.tif"))) {
 
-  ras_template = raster::raster(file.path(terrain_dir, "elevation.tif"))
   for(i in unique(tertiary_rds$STUSPS)) {
     if(!file.exists(file.path(transportation_processed_dir, 'tertiary_states', paste0('tertiary_rds_', i, '.tif')))) {
       slim_rds <- tertiary_rds %>%
         filter(.$STUSPS == i)
       print(head(slim_rds))
-      rastered <- raster(extent(ras_template), res = 1000, crs=projection(ras_template))
+      rastered <- raster_mask
       rastered[] <- 1:ncell(rastered)
       
       rsp <- rastered %>%
