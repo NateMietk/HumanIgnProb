@@ -15,12 +15,12 @@ chip_rasters(input_tiles = tile_list, var_list = y_list, out_dir = 'data/tiles/y
 
 # Chip out boundaries
 boundary_list <- list.files(bounds_monthly_dir, pattern = '.tif', full.names = TRUE)
-chip_rasters(var_list = boundary_list, out_dir = 'data/tiles/x_var/')
+chip_rasters(input_tiles = tile_list, var_list = boundary_list, out_dir = 'data/tiles/x_var/')
 
 # Chip out terrain
 terrain_list <- list.files(terrain_monthly_dir, pattern = '.tif', full.names = TRUE)
-chip_rasters(var_list = terrain_list, out_dir = 'data/tiles/x_var/')
+chip_rasters(input_tiles = tile_list, var_list = terrain_list, out_dir = 'data/tiles/x_var/')
 
 # Chip out the climate
 climate_mean_list <- list.files(fire_dir, pattern = '*.tif', full.names = TRUE, recursive = TRUE)
-chip_rasters(var_list = y_list, out_dir = 'data/tiles/x_var/')
+chip_rasters(input_tiles = tile_list, var_list = y_list, out_dir = 'data/tiles/x_var/')
