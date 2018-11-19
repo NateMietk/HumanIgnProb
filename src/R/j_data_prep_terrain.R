@@ -95,21 +95,26 @@ if (!exists("aspect")) {
       raster::terrain(., opt = 'aspect', unit = 'degrees')
 
     raster::writeRaster(aspect, filename = file.path(processed_dir, 'terrain',"aspect.tif"), format = "GTiff")
-
+    
+    #Create folded aspect
+    get_folded_aspect <- function(aspect, ...) {
+      abs(180 - abs(aspect - 225))
+    }
+    folded_aspect <- calc(aspect, fun = get_folded_aspect, na.rm = TRUE)
+    raster::writeRaster(folded_aspect, filename = file.path(processed_dir, 'terrain',"folded_aspect.tif"), format = "GTiff")
+    
     system(paste0("aws s3 sync ",
                   processed_dir, " ",
                   s3_proc_prefix))
 
   } else {
-
     aspect <- raster::raster(file.path(processed_dir, 'terrain',"aspect.tif"))
+    folded_aspect <- raster::raster(file.path(processed_dir, 'terrain',"folded_aspect.tif"))
   }
 }
 
 # extract terrain variables by each fpa point and append to fpa dataframe
-tifs <- list.files(processed_dir,
-                         pattern = '.tif',
-                         full.names = TRUE)
+terrain_list <- list.files(proc_terrain_dir, pattern = '.tif', full.names = TRUE)
 
 # extract terrain variables in parallel
 sfInit(parallel = TRUE, cpus = parallel::detectCores())
@@ -133,6 +138,9 @@ extraction_df <- extractions %>%
 # save processed/cleaned terrain extractions
 write_rds(extraction_df, file.path(terrain_extract, 'terrain_extractions.rds'))
 
-system(paste0("aws s3 sync ",
-              summary_dir, " ",
-              s3_proc_extractions))
+system(paste0("aws s3 sync ", summary_dir, " ", s3_proc_extractions))
+
+# create monthly stacks per year for the model
+terrain_list <- list.files(proc_terrain_dir, pattern = '.tif', full.names = TRUE)
+create_monthy_repeats(time = rep(1992:2015), var_list = terrain_list, out_dir = terrain_monthly_dir)
+

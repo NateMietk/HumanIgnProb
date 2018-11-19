@@ -1,11 +1,13 @@
 
 # load all ibraries
 x <- c("raster", "ncdf4", "tidyverse", "sf", "rasterVis", "gridExtra", "data.table", "assertthat", "rvest", 'parallel', 'doParallel', 'lwgeom','pbapply',
-       'parallel', 'foreach', "httr", "purrr", "rgdal", "maptools", "foreign", "purrr", "zoo", "lubridate", "magrittr", "snowfall", 'spatstat')
+       'parallel', 'foreach', "httr", "purrr", "rgdal", "maptools", "foreign", "purrr", "zoo", "lubridate", "magrittr", "snowfall", 'spatstat', 'meteo')
 lapply(x, library, character.only = TRUE, verbose = FALSE)
 
 # load all functions
-source('src/functions/helper_functions.R')
+file_sources <- list.files(file.path('src', 'functions'), pattern="*.R", 
+                           full.names=TRUE, ignore.case=TRUE)
+invisible(sapply(file_sources, source, .GlobalEnv))
 
 # key projections
 p4string_ea <- "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"   #http://spatialreference.org/ref/sr-org/6903/
@@ -43,7 +45,11 @@ transportation_density_dir <- file.path(transportation_dir, 'density')
 transportation_processed_dir <- file.path(transportation_dir, 'processed')
 transportation_dist_dir <- file.path(transportation_dir, 'distance')
 proc_gridded_census <- file.path(anthro_proc_dir, 'gridded_census')
+proc_landcover <- file.path(processed_dir, 'landcover')
 per_state <- file.path(transportation_density_dir, "per_state")
+fire_dir <- file.path(processed_dir, 'fire')
+proc_terrain_dir <- file.path(processed_dir, 'terrain')
+proc_bounds_dir <- file.path(processed_dir, 'bounds')
 
 # create direcotires to hold climate summary outputs
 summaries_dir <- file.path(summary_dir, "climate_extractions")
@@ -58,6 +64,10 @@ anthro_dir <- file.path(prefix, "anthro")
 ztrax_dir <- file.path(anthro_dir, "ztrax")
 raw_ztrax_dir <- file.path(ztrax_dir, "raw_built_up_gpkg")
 stacked_ztrax_rst_dir <- file.path(ztrax_dir, "stacked_ztrax_rst")
+
+# Monthly stacks
+terrain_monthly_dir <- file.path(terrain_dir, 'monthly')
+bounds_monthly_dir <- file.path(proc_bounds_dir, 'monthly')
 
 # for pushing and pulling to s3 using the system function
 s3_base <- 's3://earthlab-modeling-human-ignitions/'
@@ -76,7 +86,7 @@ var_dir <- list(prefix, raw_prefix, us_prefix, ecoregion_prefix, roads_prefix, s
                 summary_95th, summary_numdays95th, terrain_dir, transportation_dir, anthro_proc_dir,
                 transportation_density_dir, transportation_processed_dir, anthro_dir, anthro_state_extract,
                 terrain_extract, anthro_extract, per_state,ecoregionl4_prefix, ztrax_dir, raw_ztrax_dir,
-                stacked_ztrax_rst_dir, proc_gridded_census, landcover_dir)
+                stacked_ztrax_rst_dir, proc_gridded_census, landcover_dir, proc_landcover, fire_dir)
 
 lapply(var_dir, function(x) if(!dir.exists(x)) dir.create(x, showWarnings = FALSE))
 
