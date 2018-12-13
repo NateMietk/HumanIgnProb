@@ -31,7 +31,6 @@ chip_rasters <- function(input_tiles, var_list, out_dir) {
             crop(shp_list) %>%
             mask(shp_list)
           writeRaster(mask_rst_tile, filename = out_name)
-          system(paste0("aws s3 sync data/tiles s3://earthlab-modeling-human-ignitions/tiles"))
         }
       }, dir = dir)
     }, 

@@ -12,15 +12,19 @@ if(length(list.files('data/tiles/chip_256xy_64o', pattern = '*.tif', full.names 
 # Chip out the dependent variables (y)
 y_list <- list.files(fire_dir, pattern = '*.tif', full.names = TRUE, recursive = TRUE)
 chip_rasters(input_tiles = tile_list, var_list = y_list, out_dir = 'data/tiles/y_var/')
+system(paste0("aws s3 sync data/tiles s3://earthlab-modeling-human-ignitions/tiles"))
 
 # Chip out boundaries
 boundary_list <- list.files(bounds_monthly_dir, pattern = '.tif', full.names = TRUE)
 chip_rasters(input_tiles = tile_list, var_list = boundary_list, out_dir = 'data/tiles/x_var/')
+system(paste0("aws s3 sync data/tiles s3://earthlab-modeling-human-ignitions/tiles"))
 
 # Chip out terrain
 terrain_list <- list.files(terrain_monthly_dir, pattern = '.tif', full.names = TRUE)
 chip_rasters(input_tiles = tile_list, var_list = terrain_list, out_dir = 'data/tiles/x_var/')
+system(paste0("aws s3 sync data/tiles s3://earthlab-modeling-human-ignitions/tiles"))
 
 # Chip out the climate
 climate_mean_list <- list.files(fire_dir, pattern = '*.tif', full.names = TRUE, recursive = TRUE)
 chip_rasters(input_tiles = tile_list, var_list = y_list, out_dir = 'data/tiles/x_var/')
+system(paste0("aws s3 sync data/tiles s3://earthlab-modeling-human-ignitions/tiles"))
