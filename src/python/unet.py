@@ -1,4 +1,6 @@
+import torch
 from torch import nn
+import torch.nn.functional as F
 
 class UNet(nn.Module):
     def __init__(self, in_channels=1, n_classes=2, depth=5, wf=6, padding=False,
