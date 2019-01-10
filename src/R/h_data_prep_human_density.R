@@ -1,6 +1,5 @@
 
-
-final_list <- list.files('data/anthro/ztrax/ztrax_raw_cumsum_1980_2015_1k', full.names = TRUE)
+final_list <- list.files(cumsum_ztrax_dir, full.names = TRUE)
 
 if(length(final_list) != 37){
   rst_list <- list.files(raw_ztrax_dir, pattern = '.gpkg$', full.names = TRUE)
@@ -43,22 +42,27 @@ if(length(final_list) != 37){
     out_rst <- calc(out_rst, sum, na.rm =TRUE) %>%
       mask(as(usa_shp, 'Spatial'))
     
-    raster::writeRaster(out_rst, file.path('data/anthro/ztrax/ztrax_raw_count_1980_2015_1k', paste0('ztrax_count_', j, '.tif')),
+    raster::writeRaster(out_rst, file.path(count_ztrax_dir, paste0('ztrax_count_', j, '.tif')),
                         format = "GTiff", overwrite = TRUE)
     system(paste0("aws s3 sync ", anthro_dir, " ", s3_proc_anthro))
   }
   
-  rst_list <- list.files('data/anthro/ztrax/ztrax_raw_count_1980_2015_1k', full.names = TRUE)
+  rst_list <- list.files(count_ztrax_dir, full.names = TRUE)
   rsts <- lapply(rst_list, raster)
   rsts <- Reduce("+", rsts, accumulate = TRUE)
   
   lapply(seq_along(rsts), function(x) {
     name <- gsub("count", "cumsum", rst_list[x])
-  
+    
     writeRaster(rsts[[x]], name, datatype = 'GTiff')
-    })
-  system(paste0("aws s3 sync ", anthro_dir, " ", s3_proc_anthro)) 
+  })
+  system(paste0("aws s3 sync ", processed_dir, " ", s3_proc_prefix))
+  
 } else {
   ztrax_grid <- raster::stack(final_list)
 }
 
+ztrax_list <- list.files(cumsum_ztrax_dir, pattern = '.tif$', full.names = TRUE)
+create_monthy_repeats(time = rep(1992:2015), var_list = ztrax_list, 
+                      out_dir = anthro_monthly_proc_dir)
+system(paste0("aws s3 sync ", processed_dir, " ", s3_proc_prefix, ' --delete'))
