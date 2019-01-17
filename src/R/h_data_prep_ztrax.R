@@ -62,7 +62,24 @@ if(length(final_list) != 37){
   ztrax_grid <- raster::stack(final_list)
 }
 
-ztrax_list <- list.files(cumsum_ztrax_dir, pattern = '.tif$', full.names = TRUE)
-create_monthy_repeats(time = rep(1992:2015), var_list = ztrax_list, 
-                      out_dir = anthro_monthly_proc_dir)
+year_pattern <- paste0(rep(1992:2015), sep = '|', collapse="") %>%
+  str_sub(., 1, str_length(.)-1)
+ztrax_list <- list.files(cumsum_ztrax_dir, pattern = c(year_pattern), 
+                         full.names = TRUE, recursive = TRUE)
+
+cl <- makeCluster(getOption("cl.cores", detectCores())) # 8 cores on a m5d.4xlarge instance
+pboptions(type = 'txt', use_lb = TRUE)
+
+pblapply(ztrax_list, function(x, out_dir) {
+  require(tidyverse)
+  require(raster)
+  name <- basename(x) %>%
+    gsub('cumsum_', '', .)
+    if(!file.exists(file.path(out_dir, paste0(name, '.tif')))) {
+      monthly_grid <- raster::stack(replicate(12, raster::raster(x)))
+    writeRaster(monthly_grid, filename = file.path(out_dir, paste0(name, '.tif')))
+    }
+  }, 
+  out_dir = anthro_monthly_proc_dir,
+  cl = cl)
 system(paste0("aws s3 sync ", processed_dir, " ", s3_proc_prefix, ' --delete'))

@@ -100,7 +100,11 @@ if(!file.exists(file.path(proc_bounds_dir, 'gridded_lonitude.tif'))) {
   writeRaster(gridded_lonitude, file.path(proc_bounds_dir, 'gridded_lonitude.tif'))
   writeRaster(gridded_latitude, file.path(proc_bounds_dir, 'gridded_latitude.tif'))
   system(paste0("aws s3 sync ", proc_bounds_dir, " ", s3_proc_prefix))
-} 
+} else {
+  gridded_lonitude <- raster::raster(file.path(proc_bounds_dir, 'gridded_lonitude.tif'))
+  gridded_latitude <- raster::raster(file.path(proc_bounds_dir, 'gridded_latitude.tif'))
+  
+}
 
 # Rasterize land mask
 if(!file.exists(file.path(proc_bounds_dir, 'land_mask.tif'))) {
@@ -116,4 +120,4 @@ if(!file.exists(file.path(proc_bounds_dir, 'land_mask.tif'))) {
 # create monthly stacks per year for the model
 bounds_list <- list.files(proc_bounds_dir, pattern = '.tif', full.names = TRUE)
 create_monthy_repeats(time = rep(1992:2015), var_list = bounds_list, out_dir = bounds_monthly_dir)
-system(paste0("aws s3 sync ", proc_bounds_dir, " ", s3_proc_prefix))
+system(paste0("aws s3 sync ", processed_dir, " ", s3_proc_prefix))

@@ -29,23 +29,23 @@ if (!exists("fpa_clean")) {
     sf::st_write(fpa_clean, file.path(processed_dir, "fpa_clean.gpkg"), driver = "GPKG", delete_layer = TRUE)
     
     system(paste0("aws s3 sync ", processed_dir, " ", s3_proc_prefix))
-  }
-}
+  } 
+} 
 
 
 for(k in unique(fpa_clean$stat_cause_descr)) {
   
   fpa_subset_cause <- fpa_clean %>%
     filter(stat_cause_descr==k)
-
+  
   cause_raster <- raster::stack()
   
   if(!file.exists(file.path('data', 'processed', 'fire', paste0(k, '_', i, '.tif')))) {
     for(i in unique(fpa_clean$year)) {
-
+      
       fpa_subset_year <- fpa_subset_cause %>%
         filter(fire_year==i)
-
+      
       for(j in unique(fpa_clean$month)) {
         fpa_subset_month<- fpa_subset_year %>%
           filter(month== as.character(j)) %>%
@@ -59,13 +59,13 @@ for(k in unique(fpa_clean$stat_cause_descr)) {
           cause_raster_s[] <- 0
           names(cause_raster_s) <- as.character(varnames)
           cause_raster <- stack(cause_raster, cause_raster_s)
-          } else {
-            fpa_subset_sp <- as(fpa_subset_month, 'Spatial')
-            
-            cause_raster_s <- raster::rasterize(fpa_subset_sp, raster_mask, fpa_subset_sp$unique_id, fun='count') 
-            names(cause_raster_s) <- as.character(varnames)
-            cause_raster <- stack(cause_raster, cause_raster_s)
-          }
+        } else {
+          fpa_subset_sp <- as(fpa_subset_month, 'Spatial')
+          
+          cause_raster_s <- raster::rasterize(fpa_subset_sp, raster_mask, fpa_subset_sp$unique_id, fun='count') 
+          names(cause_raster_s) <- as.character(varnames)
+          cause_raster <- stack(cause_raster, cause_raster_s)
+        }
       }
       idx_full <- seq(as.Date(paste0(i, '-01-01')), as.Date(paste0(i,'-12-01')), by = 'month')
       yearmon_order <- data.frame(V1 = as.character(as.yearmon(idx_full))) %>%
@@ -74,7 +74,7 @@ for(k in unique(fpa_clean$stat_cause_descr)) {
       cause_raster <- subset(cause_raster, yearmon_order)
       print(cause_raster)
       writeRaster(cause_raster, file.path('data', 'processed', 'fire', paste0(k, '_', i, '.tif')), format="GTiff")
-      }
+    }
   }
 }
 system(paste0("aws s3 sync ", processed_dir, " ", s3_proc_prefix))
@@ -84,13 +84,13 @@ system(paste0("aws s3 sync ", processed_dir, " ", s3_proc_prefix))
 cause_raster <- raster::stack()
 fpa_human <- fpa_clean %>%
   filter(cause == 'Human')
-  
+
 for(i in unique(fpa_human$year)) {
   if(!file.exists(file.path('data', 'processed', 'fire', paste0('Human_', i, '.tif')))) {
     
     fpa_subset_year <- fpa_human %>%
-    filter(fire_year==i)
-  
+      filter(fire_year==i)
+    
     for(j in unique(fpa_human$month)) {
       fpa_subset_month<- fpa_subset_year %>%
         filter(month== as.character(j)) %>%

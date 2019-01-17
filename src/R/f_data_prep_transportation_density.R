@@ -146,3 +146,11 @@ if (!file.exists(file.path(transportation_density_dir, "tertiary_rds_distance.ti
   tertiary_rds_density <- raster(file.path(transportation_dist_dir, "tertiary_rds_distance.tif"))
 }
 
+# create monthly stacks per year for the model
+transport_den_list <- list.files(transportation_density_dir, pattern = '.tif', full.names = TRUE)
+transport_dist_list <- list.files(transportation_dist_dir, pattern = '.tif', full.names = TRUE)
+transport_list <- append(transport_den_list, transport_dist_list)
+create_monthy_repeats(time = rep(1992:2015), var_list = transport_list, 
+                      out_dir = transport_monthly_proc_dir)
+system(paste0("aws s3 sync ", processed_dir, " ", s3_proc_prefix, ' --delete'))
+
