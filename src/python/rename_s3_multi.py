@@ -34,27 +34,38 @@ def proc_fun(var):
 
         # call aws mv to rename file
         sub_str = f'aws s3 --recursive mv {old_fi} {new_fi}'
-        subprocess.call(sub_str)
+        sub_str = f'aws s3 mv {old_fi} {new_fi}'
+        #sub_str = 'aws s3 ls'
+        subprocess.call(sub_str, shell=True)
         
+        #print(sub_str)
+        #break
         
 
 
-if __name__ == '__main__':
-    rename_vars = ['aet-95th', 'aet-mean',
-                   'def-95th', 'def-mean',
-                   'ffwi-95th', 'ffwi-mean',
-                   'fm100-95th', 'fm100-mean',
-                   'pdsi-95th', 'pdsi-mean',
-                   'pr-95th', 'pr-mean',
-                   'vpd-95th', 'vpd-mean',
-                   'tmmx-95th', 'tmmx-mean',
-                   'vs-95th', 'vs-mean']
+#if __name__ == '__main__':
+rename_vars = ['aet-95th', 'aet-mean',
+               'def-95th', 'def-mean',
+               'ffwi-95th', 'ffwi-mean',
+               'fm100-95th', 'fm100-mean',
+               'pdsi-95th', 'pdsi-mean',
+               'pr-95th', 'pr-mean',
+               'vpd-95th', 'vpd-mean',
+               'tmmx-95th', 'tmmx-mean',
+               'vs-95th', 'vs-mean']
 
-    nproc = max(mp.cpu_count()-2, 2)
-    pool = mp.Pool(nproc)
-    
-    vals = pool.map(partial(proc_fun), rename_vars[1:])
-    
-    # close the pool
-    pool.close()
-    pool.join()
+# subset of variables with different names
+rename_vars = ['ffwi-numdays95th',
+               'fm100-numdays95th',
+               'pr-numdays95th',
+               'tmmx-numdays95th',
+               'vs-numdays95th']
+
+nproc = max(mp.cpu_count(), 2)
+pool = mp.Pool(nproc)
+
+vals = pool.map(partial(proc_fun), rename_vars)
+
+# close the pool
+pool.close()
+pool.join()
