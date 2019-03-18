@@ -46,13 +46,13 @@ def proc_fun(var):
 #if __name__ == '__main__':
 rename_vars = ['aet-95th', 'aet-mean',
                'def-95th', 'def-mean',
-               'ffwi-95th', 'ffwi-mean',
-               'fm100-95th', 'fm100-mean',
-               'pdsi-95th', 'pdsi-mean',
-               'pr-95th', 'pr-mean',
+               'ffwi-95th', 'ffwi-mean', # did this exist in the first place?
+               'fm100-95th', 'fm100-mean', # did this exist in the first place?
+               'pdsi-95th', 'pdsi-mean', 
+               'pr-95th', 'pr-mean', # did this exist in the first place?
                'vpd-95th', 'vpd-mean',
-               'tmmx-95th', 'tmmx-mean',
-               'vs-95th', 'vs-mean']
+               'tmmx-95th', 'tmmx-mean', # did this exist in the first place?
+               'vs-95th', 'vs-mean' # did this exist in the first place?]
 
 # subset of variables with different names
 rename_vars = ['ffwi-numdays95th',
