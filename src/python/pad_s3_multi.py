@@ -90,11 +90,11 @@ nproc = max(mp.cpu_count(), 2)
 pool = mp.Pool(nproc)
 
 # create padded directory
-if not os.path.exists('padded/x_var'):
-    os.mkdir('padded/x_var')
+if not os.path.exists('./padded/x_var'):
+    os.mkdir('./padded/x_var')
     
-if not os.path.exists('padded/y_var'):
-    os.mkdir('padded/y_var')
+if not os.path.exists('./padded/y_var'):
+    os.mkdir('./padded/y_var')
 
 for vars, x_or_y in zip((x_vars, y_vars), ('x_var', 'y_var')):
     
