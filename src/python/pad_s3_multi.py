@@ -96,7 +96,7 @@ if not os.path.exists('./padded/x_var'):
 if not os.path.exists('./padded/y_var'):
     os.mkdir('./padded/y_var')
 
-for vars, x_or_y in zip((x_vars, y_vars), ('x_var', 'y_var'):
+for vars, x_or_y in zip((x_vars, y_vars), ('x_var', 'y_var')):
     
     # crush it
     vals = pool.map(partial(proc_fun, vart=x_or_y), vars)
