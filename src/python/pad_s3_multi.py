@@ -8,6 +8,9 @@ import rasterio as rio
 def download_pad_upload(input, output, rows=448, cols=448):
 
 	# download the input file
+	sub_str = f'aws s3 cp {input} .'
+	subprocess.call(sub_str, shell=True)	
+	
 	infi = f'./{os.path.basename(input)}'
 	outfi = f'./padded/{os.path.basename(input)}'
 	
@@ -55,15 +58,14 @@ def proc_fun(var, xy=None):
 		old_fi = s3_folder_old + '/{}'.format(fi_name)
 		new_fi = s3_folder_new + '/{}'.format(fi_name)
 		
-		if tile in bad_tiles:
+		if tile not in bad_tiles:
 		    # copy to new tile folder
-			# call aws mv to rename file
 			sub_str = f'aws s3 cp {old_fi} {new_fi}'
 			subprocess.call(sub_str, shell=True)
 			
 		else:
 		    # call function to download, pad, and upload
-			download_pad_upload(input, output):
+			download_pad_upload(old_fi, new_fi):
 			
 			
 	return
