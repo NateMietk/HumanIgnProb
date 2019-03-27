@@ -65,7 +65,7 @@ def proc_fun(var, xy=None):
             
         else:
             # call function to download, pad, and upload
-            download_pad_upload(old_fi, new_fi):
+            download_pad_upload(old_fi, new_fi)
             
             
     return
