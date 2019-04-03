@@ -4,15 +4,19 @@ import itertools
 import multiprocessing as mp
 from functools import partial
 import rasterio as rio
+import numpy as np
 
-def download_pad_upload(input, output, rows=448, cols=448):
+def download_pad_upload(inputs3, outputs3, rows=448, cols=448, xy=None):
 
     # download the input file
-    sub_str = f'aws s3 cp {input} .'
+    sub_str = f'aws s3 cp {inputs3} ./padded/'
+    #print(sub_str)
     subprocess.call(sub_str, shell=True)    
     
-    infi = f'./{os.path.basename(input)}'
-    outfi = f'./padded/{os.path.basename(input)}'
+    infi = f'./padded/{os.path.basename(inputs3)}'
+    outfi = f'./padded/{xy}/{os.path.basename(inputs3)}'
+    
+    print(infi, outfi)
     
     with rio.open(infi) as src:
         arr = src.read()
@@ -20,8 +24,8 @@ def download_pad_upload(input, output, rows=448, cols=448):
         
     # pad the array
     cur_shape = arr.shape
-    temp = np.zeros((448,448), dtype=arr.dtype)
-    temp[:cur_shape[0], :cur_shape[1]] = arr
+    temp = np.zeros((1, 448,448), dtype=arr.dtype)
+    temp[0, :cur_shape[1], :cur_shape[2]] = arr
     arr = temp
     
     # update metadata
@@ -29,13 +33,17 @@ def download_pad_upload(input, output, rows=448, cols=448):
                  "width": cols})
                  
     # write out padded array
-    with rio.open(output, 'w', **meta) as dest:
+    with rio.open(outfi, 'w', **meta) as dest:
         dest.write(arr)
         
     # aws call to replace raster
-    sub_str = f'aws s3 cp {outfi} {output}'
+    sub_str = f'aws s3 cp {outfi} {outputs3}'
     subprocess.call(sub_str, shell=True)    
 
+    # clean up
+    os.remove(infi)
+    os.remove(outfi)
+    
     return
 
 def proc_fun(var, xy=None):
@@ -65,7 +73,7 @@ def proc_fun(var, xy=None):
             
         else:
             # call function to download, pad, and upload
-            download_pad_upload(old_fi, new_fi)
+            download_pad_upload(old_fi, new_fi, xy=xy)
             
             
     return
@@ -91,15 +99,15 @@ pool = mp.Pool(nproc)
 
 # create padded directory
 if not os.path.exists('./padded/x_var'):
-    os.mkdirs('./padded/x_var')
+    os.makedirs('./padded/x_var')
     
 if not os.path.exists('./padded/y_var'):
-    os.mkdirs('./padded/y_var')
+    os.makedirs('./padded/y_var')
 
-for vars, x_or_y in zip((x_vars, y_vars), ('x_var', 'y_var')):
+for vars, x_or_y in zip((y_vars, x_vars), ('y_var', 'x_var')):
     
     # crush it
-    vals = pool.map(partial(proc_fun, vart=x_or_y), vars)
+    vals = pool.map(partial(proc_fun, xy=x_or_y), vars)
 
     # close the pool
     pool.close()
