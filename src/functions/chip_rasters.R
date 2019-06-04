@@ -12,7 +12,7 @@ chip_rasters <- function(input_tiles, var_list, out_dir) {
     require(pbapply)
 
     tile_name <-  basename(x) %>%
-      file_path_sans_ext()
+      file_path_sans_ext(.)
     
     pblapply(raster_list, function(j, dir){
       
@@ -27,7 +27,7 @@ chip_rasters <- function(input_tiles, var_list, out_dir) {
           shp_list <- as(raster::extent(raster::raster(x)), "SpatialPolygons")
           proj4string(shp_list) <- "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"
           
-          mask_rst_tile <- raster::raster(yearly_rst[[z]]) %>%
+          mask_rst_tile <- yearly_rst[[z]] %>%
             crop(shp_list) %>%
             mask(shp_list)
           writeRaster(mask_rst_tile, filename = out_name)
