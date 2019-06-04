@@ -52,6 +52,7 @@ def proc_fun(var, xy=None):
     # s3_folder_new = 's3://earthlab-modeling-human-ignitions/tiles/padded/x_var'
     
     s3_folder_old = 's3://earthlab-modeling-human-ignitions/tiles/{}'.format(xy)
+    s3_folder_old = 's3://earthlab-modeling-human-ignitions/tiles'
     s3_folder_new = 's3://earthlab-modeling-human-ignitions/tiles/padded/{}'.format(xy)
 
     tiles = list(range(1,151)) # all tiles
@@ -90,12 +91,15 @@ x_vars = ['aet-95th', 'aet-mean',
                'vs-numdays95th', 'vs-95th', 'vs-mean', # did this exist in the first place?
                'land-mask']
 
+#only process land mask               
+x_vars = ['land-mask']
+
 y_vars = ['Arson', 'Children', 'Campfire', 'Debris-Burning', 'Equipment-Use',
           'Fireworks', 'Lightning', 'Miscellaneous', 'Powerline', 'Railroad', 
           'Smoking', 'Structure', 'Human']
 
-nproc = max(mp.cpu_count(), 2)
-pool = mp.Pool(nproc)
+# nproc = max(mp.cpu_count(), 2)
+# pool = mp.Pool(nproc)
 
 # create padded directory
 if not os.path.exists('./padded/x_var'):
@@ -104,6 +108,8 @@ if not os.path.exists('./padded/x_var'):
 if not os.path.exists('./padded/y_var'):
     os.makedirs('./padded/y_var')
 
+proc_fun('land-mask', xy='x_var')
+'''
 for vars, x_or_y in zip((y_vars, x_vars), ('y_var', 'x_var')):
     
     # crush it
@@ -112,3 +118,5 @@ for vars, x_or_y in zip((y_vars, x_vars), ('y_var', 'x_var')):
     # close the pool
     pool.close()
     pool.join()
+
+'''
